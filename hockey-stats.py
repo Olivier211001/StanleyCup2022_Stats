@@ -2,6 +2,9 @@ from bs4 import BeautifulSoup
 import requests 
 import xlsxwriter
 
+# This code is scraping data on ESPN 
+# You get nhl stanley cup series players stats (from the best to the worst)
+
 url = "https://www.espn.com/nhl/stats/player"
 page = requests.get(url)
 
