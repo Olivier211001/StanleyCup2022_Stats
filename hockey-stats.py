@@ -5,8 +5,6 @@ from urllib.request import urlopen
 # This code is scraping data on ESPN 
 # You get nhl stanley cup series players stats (from the best to the worst)
 
-i = 1
-j = 0
 colPos = 0
 colPlayer = 1
 colTeam= 2
@@ -36,6 +34,8 @@ def getStatsInfo():
     return responseJson
 
 def buildExcelFileWithStats():
+    i = 1
+    j = 0
     while(j != 335):
         player = arrayOfStats["athletes"][j]["athlete"]["displayName"]
         team = arrayOfStats["athletes"][j]["athlete"]["teamShortName"]
