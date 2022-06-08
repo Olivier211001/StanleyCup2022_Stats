@@ -1,17 +1,12 @@
-from bs4 import BeautifulSoup
-import requests 
 import xlsxwriter
+import json
+from urllib.request import urlopen
 
 # This code is scraping data on ESPN 
 # You get nhl stanley cup series players stats (from the best to the worst)
 
-url = "https://www.espn.com/nhl/stats/player"
-page = requests.get(url)
-
-soup = BeautifulSoup(page.content, 'html.parser')
-
-stats = []
-i = 0
+i = 1
+j = 0
 colPos = 0
 colPlayer = 1
 colTeam= 2
@@ -20,16 +15,13 @@ colGoals= 4
 colAssists = 5
 colPts = 6
 
-
 workbook = xlsxwriter.Workbook('stats.xlsx')
 worksheet = workbook.add_worksheet("Stanley_Cup_Series")
-
-#############################################
 
 def write_in_excel_file(row, col, content):
         worksheet.write(row, col, content)
 
-def write_header():
+def writeHeader():
     worksheet.write("A1", "Order")
     worksheet.write("B1", "Player")
     worksheet.write("C1", "Team")
@@ -38,51 +30,34 @@ def write_header():
     worksheet.write("F1", "A")
     worksheet.write("G1", "Pts")
 
-def scrape_pos_player_team():
-    i = 0
-    for rows in soup.find_all("tr"):                    
-        player = rows.find('a', {'class': "AnchorLink"})
-        team = rows.find('span', {'class': "pl2 n10 athleteCell__teamAbbrev"})
-        position = rows.find('td', {'class': "Table__TD"})
+def getStatsInfo():
+    response = urlopen("https://site.web.api.espn.com/apis/common/v3/sports/hockey/nhl/statistics/byathlete?region=us&lang=en&contentorigin=espn&isqualified=false&limit=335&sort=offensive%3Apoints%3Adesc&category=skaters").read().decode('utf-8')  
+    responseJson = json.loads(response)
+    return responseJson
 
-        if player is not None and player.get_text() != 'G':
-            write_in_excel_file(i, colPos, position.get_text())
-            write_in_excel_file(i, colPlayer, player.get_text())
-            write_in_excel_file(i, colTeam, team.get_text())
-
+def buildExcelFileWithStats():
+    while(j != 335):
+        player = arrayOfStats["athletes"][j]["athlete"]["displayName"]
+        team = arrayOfStats["athletes"][j]["athlete"]["teamShortName"]
+        goals = arrayOfStats["athletes"][j]["categories"][1]["totals"][0]
+        assists = arrayOfStats["athletes"][j]["categories"][1]["totals"][1]
+        pts = arrayOfStats["athletes"][j]["categories"][1]["totals"][2]
+        position = arrayOfStats["athletes"][j]["athlete"]["position"]["abbreviation"]
+        write_in_excel_file(i, colPlayer, player)
+        write_in_excel_file(i, colPos, i)
+        write_in_excel_file(i, colTeam, team)
+        write_in_excel_file(i, colPosition, position)
+        write_in_excel_file(i, colGoals, goals)
+        write_in_excel_file(i, colAssists, assists)
+        write_in_excel_file(i, colPts, pts)
         i = i + 1
+        j = j + 1
 
-def scrape_position_andBuildStats():
-    i = 0
-    table = soup.find('table', {'class': "Table Table--align-right"})
-    for rows in table.find_all('tr'): 
-        pos = rows.find('td')   
-        datas = rows.find_all("td")[2:]
-        stats.append(datas)
-        if pos is not None:
-            write_in_excel_file(i, colPosition, pos.get_text())    
-        i = i + 1
+arrayOfStats = getStatsInfo()
 
-def write_Stats_in_excel():
-    i = 1
-    for data in stats:
-        if i < 51:
-            write_in_excel_file(i, colGoals, stats[i][0].get_text())
-            write_in_excel_file(i, colAssists, stats[i][1].get_text())
-            write_in_excel_file(i, colPts, stats[i][2].get_text())
-        i = i + 1
+writeHeader()
 
-
-################################################
-
-
-write_header()
-
-scrape_pos_player_team()
-
-scrape_position_andBuildStats()
-
-write_Stats_in_excel()
+buildExcelFileWithStats()
 
 workbook.close()
 
